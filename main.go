@@ -29,7 +29,6 @@ func main() {
 		panic(err)
 	}
 	r.StaticFS("/static", http.FS(staticRoot))
-	r.Static("/uploads", "./uploads")
 
 	ctx := types.Context{
 		Ctx: context.Background(),

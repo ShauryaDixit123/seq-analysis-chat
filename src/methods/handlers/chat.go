@@ -5,10 +5,8 @@ import (
 	"atgc/src/methods/fasta"
 	"atgc/src/types"
 	"fmt"
-	"io"
 	"mime/multipart"
 	"net/http"
-	"os"
 	"path/filepath"
 	"sync"
 	"time"
@@ -16,8 +14,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
-
-const uploadsDir = "uploads"
 
 var (
 	chatMu             sync.RWMutex
@@ -33,7 +29,6 @@ func init() {
 	chatSessions = make(map[string]types.ChatSession)
 	chatSessionFiles = make(map[string][]types.ChatAttachment)
 	chatSessionFilesMu = sync.RWMutex{}
-	_ = os.MkdirAll(uploadsDir, 0o755)
 }
 
 func (h *Handler) ServeChat(c *gin.Context) {
@@ -101,7 +96,7 @@ func (h *Handler) PostChatMessage(c *gin.Context) {
 			fh := files.File["files"][0]
 			attachment, err := h.processUploadedFiles(fh, sessionID)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save attachment"})
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to process attachment"})
 				return
 			}
 			chatSessionFilesMu.Lock()
@@ -116,7 +111,7 @@ func (h *Handler) PostChatMessage(c *gin.Context) {
 		for _, fh := range files.File["files"] {
 			attachment, err := h.processUploadedFiles(fh, sessionID)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save attachment"})
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to process attachment"})
 				return
 			}
 			newAttachments = append(newAttachments, attachment)
@@ -209,7 +204,7 @@ func (h *Handler) runSequenceAnalysis(
 	m *methods.Method,
 	processType, seq1, seq2 string,
 ) [][]int {
-	body := types.DynamicPrgrammingRequestBody{
+	body := types.MethodRequestBody{
 		Sequence1: seq1,
 		Sequence2: seq2,
 	}
@@ -253,30 +248,8 @@ func (h *Handler) processUploadedFiles(
 		return types.ChatAttachment{}, fmt.Errorf("parse FASTA: %w", err)
 	}
 
-	id := uuid.New().String()
-	ext := filepath.Ext(file.Filename)
-	savedName := id + ext
-	dest := filepath.Join(uploadsDir, savedName)
-
-	if _, err := src.Seek(0, io.SeekStart); err != nil {
-		return types.ChatAttachment{}, fmt.Errorf("rewind upload: %w", err)
-	}
-	out, err := os.Create(dest)
-	if err != nil {
-		return types.ChatAttachment{}, fmt.Errorf("save upload: %w", err)
-	}
-	if _, err := io.Copy(out, src); err != nil {
-		out.Close()
-		os.Remove(dest)
-		return types.ChatAttachment{}, fmt.Errorf("write upload: %w", err)
-	}
-	if err := out.Close(); err != nil {
-		os.Remove(dest)
-		return types.ChatAttachment{}, fmt.Errorf("close upload: %w", err)
-	}
-
 	return types.ChatAttachment{
-		ID:        id,
+		ID:        uuid.New().String(),
 		SessionID: sessionID,
 		Name:      file.Filename,
 		Kind:      types.AttachmentKindFASTA,

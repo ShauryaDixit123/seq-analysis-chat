@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func (m *Method) DyanmicProgrammingMatch(ctx types.Context, body types.DynamicPrgrammingRequestBody) [][]int {
+func (m *Method) DyanmicProgrammingMatch(ctx types.Context, body types.MethodRequestBody) [][]int {
 	// Implementation for dynamic programming matching
 	seq1 := body.Sequence1
 	seq2 := body.Sequence2
