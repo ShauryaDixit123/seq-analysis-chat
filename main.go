@@ -4,15 +4,31 @@ import (
 	"atgc/src/methods/handlers"
 	"atgc/src/types"
 	"context"
+	"embed"
+	"html/template"
+	"io/fs"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
+//go:embed templates/*
+var templateFS embed.FS
+
+//go:embed static
+var staticFS embed.FS
+
 func main() {
 	r := gin.Default()
 
-	r.LoadHTMLGlob("templates/*")
-	r.Static("/static", "./static")
+	tmpl := template.Must(template.New("").ParseFS(templateFS, "templates/*"))
+	r.SetHTMLTemplate(tmpl)
+
+	staticRoot, err := fs.Sub(staticFS, "static")
+	if err != nil {
+		panic(err)
+	}
+	r.StaticFS("/static", http.FS(staticRoot))
 	r.Static("/uploads", "./uploads")
 
 	ctx := types.Context{
