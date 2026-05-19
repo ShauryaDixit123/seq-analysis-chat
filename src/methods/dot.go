@@ -15,7 +15,10 @@ func (m *Method) DotProduct(ctx types.Context, body types.MethodRequestBody) [][
 func (m *Method) convertToDotProductResult(
 	sequence1, sequence2 []string,
 ) [][]int {
-	resultMatix := make([][]int, len(sequence1)+1)
+	resultMatix := make([][]int, len(sequence1))
+	for i := range resultMatix {
+		resultMatix[i] = make([]int, len(sequence2))
+	}
 	for i, v := range sequence1 {
 		for j, w := range sequence2 {
 			tba := 0

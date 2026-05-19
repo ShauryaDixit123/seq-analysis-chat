@@ -52,6 +52,7 @@ func (m *Method) convertToDynamicProgrammingMatchResult(
 	}
 	return resultMatix
 }
+
 func (m *Method) processSequenceToArray(seq1, seq2 string) ([]string, []string) {
 	arSeq1 := make([]string, len(seq1))
 	arSeq2 := make([]string, len(seq2))
@@ -64,7 +65,7 @@ func (m *Method) processSequenceToArray(seq1, seq2 string) ([]string, []string) 
 	return arSeq1, arSeq2
 }
 
-func NewDyanmicProgrammingMatch(name string,
+func NewMatchMethod(name string,
 	startTime string,
 	endTime string,
 ) *Method {

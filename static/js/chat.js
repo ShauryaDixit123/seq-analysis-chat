@@ -518,7 +518,6 @@ formEl.addEventListener("submit", async (e) => {
 
     const params = new URLSearchParams({
       session_id: sessionID,
-      dynamic: String(dynamic),
       process_type: processType,
     });
 

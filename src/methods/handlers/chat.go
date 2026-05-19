@@ -47,12 +47,45 @@ func (h *Handler) ListChatMessages(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"messages": out, "session_id": sessionID})
 }
 
+func (h *Handler) runDotProduct(sessionID, processType string) [][][]int {
+	chatSessionFilesMu.RLock()
+	files := append([]types.ChatAttachment(nil), chatSessionFiles[sessionID]...)
+	chatSessionFilesMu.RUnlock()
+	if len(files) < 2 {
+		return nil
+	}
+	type pair struct {
+		seq1, seq2 string
+	}
+	var pairs []pair
+	for i := 0; i < len(files); i++ {
+		for j := i + 1; j < len(files); j++ {
+			pairs = append(pairs, pair{files[i].Sequence, files[j].Sequence})
+		}
+	}
+	results := make([][][]int, len(pairs))
+	var wg sync.WaitGroup
+	m := methods.NewMatchMethod(
+		"Dot Product method",
+		time.Now().Format(time.RFC3339),
+		time.Now().Format(time.RFC3339),
+	)
+	for i, p := range pairs {
+		wg.Add(1)
+		go func(i int, seq1, seq2 string) {
+			defer wg.Done()
+			results[i] = h.runSequenceAnalysis(m, processType, seq1, seq2)
+		}(i, p.seq1, p.seq2)
+	}
+	wg.Wait()
+	return results
+}
+
 func (h *Handler) PostChatMessage(c *gin.Context) {
 	text := c.PostForm("message")
 	sessionID := c.Query("session_id")
 	files, err := c.MultipartForm()
-	isDynamic := c.Query("dynamic") == "true"
-	processType := c.DefaultQuery("process_type", "dynamic_programming")
+	processType := c.DefaultQuery("process_type", "none")
 	chatSessionFilesMu.RLock()
 	preexistingFiles := chatSessionFiles[sessionID]
 	chatSessionFilesMu.RUnlock()
@@ -120,7 +153,28 @@ func (h *Handler) PostChatMessage(c *gin.Context) {
 		chatSessionFiles[sessionID] = append(chatSessionFiles[sessionID], newAttachments...)
 		chatSessionFilesMu.Unlock()
 	}
-	if isDynamic && processType != "none" {
+	if processType == "dot_product" && processType != "none" {
+		dotproductResults := h.runDotProduct(sessionID, processType)
+		if len(dotproductResults) == 0 {
+			resMsg.Text = "Upload at least two FASTA files to run sequence analysis."
+		} else {
+			resMsg.Text = fmt.Sprintf(
+				"%s complete — %d comparison(s). Scatter plot shows DP table scores (row × column).",
+				processTypeLabel(processType),
+				len(dotproductResults),
+			)
+			resMsg.Attachments = append(resMsg.Attachments, types.ChatAttachment{
+				ID:          uuid.New().String(),
+				SessionID:   sessionID,
+				Name:        processTypeLabel(processType) + " result",
+				Kind:        types.AttachmentKindDotProductResult,
+				ProcessType: processType,
+				Data:        dotproductResults,
+				Size:        int64(len(dotproductResults)),
+			})
+		}
+	}
+	if processType == "dynamic_programming" && processType != "none" {
 		dynamicProgrammingResults := h.runDynamicProgrammingMatch(sessionID, processType)
 		if len(dynamicProgrammingResults) == 0 {
 			resMsg.Text = "Upload at least two FASTA files to run sequence analysis."
@@ -183,7 +237,7 @@ func (h *Handler) runDynamicProgrammingMatch(sessionID, processType string) [][]
 
 	results := make([][][]int, len(pairs))
 	var wg sync.WaitGroup
-	m := methods.NewDyanmicProgrammingMatch(
+	m := methods.NewMatchMethod(
 		"Dynamic Programming method",
 		time.Now().Format(time.RFC3339),
 		time.Now().Format(time.RFC3339),
@@ -211,6 +265,8 @@ func (h *Handler) runSequenceAnalysis(
 	switch processType {
 	case "global_alignment", "local_alignment", "dynamic_programming":
 		return m.DyanmicProgrammingMatch(h.Ctx, body)
+	case "dot_product":
+		return m.DotProduct(h.Ctx, body)
 	default:
 		return m.DyanmicProgrammingMatch(h.Ctx, body)
 	}

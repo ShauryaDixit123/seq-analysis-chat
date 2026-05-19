@@ -1,8 +1,9 @@
 package types
 
 const (
-	AttachmentKindFASTA          = "fasta"
-	AttachmentKindDynamicResult  = "dynamic_result"
+	AttachmentKindFASTA            = "fasta"
+	AttachmentKindDynamicResult    = "dynamic_result"
+	AttachmentKindDotProductResult = "dot_product_result"
 )
 
 type ChatAttachment struct {

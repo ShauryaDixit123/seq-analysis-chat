@@ -16,7 +16,7 @@ type Handler struct {
 func (h *Handler) DynamicProgrammingMatchHandle(ctx *gin.Context) {
 	log.Default().Printf("Received request for Dynamic Programming Match")
 	var body types.MethodRequestBody
-	m := methods.NewDyanmicProgrammingMatch(
+	m := methods.NewMatchMethod(
 		"Dynamic Programming method",
 		time.Now().Format(time.RFC3339),
 		time.Now().Format(time.RFC3339),
