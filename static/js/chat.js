@@ -131,12 +131,22 @@ const plotlyLayoutBase = {
     zerolinecolor: "#2a2f3d",
     tickfont: { color: "#8b93a7" },
   },
+  showlegend: false,
 };
 
 const plotlyConfig = {
   responsive: true,
   displayModeBar: false,
 };
+
+/** Map score → marker diameter (scatter, not heatmap colorscale). */
+function scoreToMarkerSize(values, minSize = 0.5, maxSize = 2) {
+  if (!values.length) return [];
+  const minV = Math.min(...values);
+  const maxV = Math.max(...values);
+  const span = maxV - minV || 1;
+  return values.map((v) => minSize + ((v - minV) / span) * (maxSize - minSize));
+}
 
 function matrixToPlotlyTrace(matrix) {
   const points = matrixToPoints(matrix);
@@ -152,26 +162,20 @@ function matrixToPlotlyTrace(matrix) {
   }
 
   const values = points.map((p) => p.v);
-  const minV = Math.min(...values);
-  const maxV = Math.max(...values);
 
   return {
-    type: "scatter",
+    type: "scattergl",
     mode: "markers",
+    name: "DP scores",
     x: points.map((p) => p.x),
     y: points.map((p) => p.y),
     marker: {
-      color: values,
-      cmin: minV,
-      cmax: maxV,
-      colorscale: "Viridis",
-      showscale: true,
-      size: 9,
+      color: "rgba(91, 141, 239, 0.75)",
+      size: scoreToMarkerSize(values),
+      sizemode: "diameter",
+      sizeref: 1,
+      line: { color: "rgba(232, 234, 239, 0.35)", width: 0.5 },
       opacity: 0.85,
-      colorbar: {
-        title: { text: "Score", font: { color: "#8b93a7", size: 11 } },
-        tickfont: { color: "#8b93a7" },
-      },
     },
     text: points.map((p) => `row ${p.y}, col ${p.x}<br>score: ${p.v}`),
     hovertemplate: "%{text}<extra></extra>",

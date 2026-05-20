@@ -18,11 +18,11 @@ The module name **atgc** refers to the four nucleotide bases: adenine (A), thymi
 
 ## Tech stack
 
-| Layer      | Technology                          |
-|-----------|--------------------------------------|
-| Backend   | Go 1.25, [Gin](https://github.com/gin-gonic/gin) |
-| Frontend  | HTML/CSS/vanilla JS, [Plotly.js](https://plotly.com/javascript/) (CDN) |
-| Assets    | `embed` — templates and static files baked into the binary |
+| Layer    | Technology                                                             |
+| -------- | ---------------------------------------------------------------------- |
+| Backend  | Go 1.25, [Gin](https://github.com/gin-gonic/gin)                       |
+| Frontend | HTML/CSS/vanilla JS, [Plotly.js](https://plotly.com/javascript/) (CDN) |
+| Assets   | `embed` — templates and static files baked into the binary             |
 
 ## Project layout
 
@@ -79,29 +79,29 @@ For chat-only messages (no analysis), set Analysis to **None (chat only)**.
 
 ## API reference
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/health` | Health check (`{"message":"OK"}`) |
-| `GET` | `/` | Chat HTML page |
-| `POST` | `/api/chat/session` | Create a new chat session |
-| `GET` | `/api/chat/session/:session_id` | List messages for a session |
-| `GET` | `/api/chat?session_id=…` | List messages (query param variant) |
-| `POST` | `/api/chat?session_id=…&process_type=…` | Post message + optional FASTA uploads (`multipart/form-data`: `message`, `files`) |
-| `POST` | `/dynamic` | JSON body `{ "sequence1", "sequence2", "plot" }` — dynamic programming (handler currently binds input; extend for full JSON response) |
+| Method | Path                                    | Description                                                                                                                           |
+| ------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`  | `/health`                               | Health check (`{"message":"OK"}`)                                                                                                     |
+| `GET`  | `/`                                     | Chat HTML page                                                                                                                        |
+| `POST` | `/api/chat/session`                     | Create a new chat session                                                                                                             |
+| `GET`  | `/api/chat/session/:session_id`         | List messages for a session                                                                                                           |
+| `GET`  | `/api/chat?session_id=…`                | List messages (query param variant)                                                                                                   |
+| `POST` | `/api/chat?session_id=…&process_type=…` | Post message + optional FASTA uploads (`multipart/form-data`: `message`, `files`)                                                     |
+| `POST` | `/dynamic`                              | JSON body `{ "sequence1", "sequence2", "plot" }` — dynamic programming (handler currently binds input; extend for full JSON response) |
 
 ### `process_type` query values
 
-| Value | Behavior |
-|-------|----------|
-| `none` | Chat only; no matrix computation |
-| `dynamic_programming` | DP score table |
-| `dot_product` | Match / mismatch matrix |
-| `global_alignment` | DP table (same code path as dynamic programming today) |
-| `local_alignment` | DP table (same code path as dynamic programming today) |
+| Value                 | Behavior                                               |
+| --------------------- | ------------------------------------------------------ |
+| `none`                | Chat only; no matrix computation                       |
+| `dynamic_programming` | DP score table                                         |
+| `dot_product`         | Match / mismatch matrix                                |
+| `global_alignment`    | DP table (same code path as dynamic programming today) |
+| `local_alignment`     | DP table (same code path as dynamic programming today) |
 
 ## Algorithms (summary)
 
-**Dot product** — For sequences of length *m* and *n*, produces an *m×n* matrix where cell `(i,j)` is `1` if `seq1[i] == seq2[j]`, else `0`.
+**Dot product** — For sequences of length _m_ and _n_, produces an _m×n_ matrix where cell `(i,j)` is `1` if `seq1[i] == seq2[j]`, else `0`.
 
 **Dynamic programming** — Character arrays are compared with a recurrence: matching characters add to the score from the northwest cell; mismatches take the maximum of available neighbors (north, west, northwest). The full table is returned for visualization.
 
